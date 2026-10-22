@@ -1,0 +1,27 @@
+services:
+  prim-mcp:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PORT: "3000"
+      HOST: "0.0.0.0"
+    networks:
+      - infra-network
+    labels:
+      - "traefik.enable=true"
+      # L'endpoint MCP est /mcp/<MCP_SECRET> : le secret protège ton quota PRIM
+      - "traefik.http.routers.prim-mcp.rule=Host(`prim.home.leodubosclard.com`)"
+      - "traefik.http.routers.prim-mcp.entrypoints=websecure"
+      - "traefik.http.routers.prim-mcp.tls.certresolver=letsencrypt"
+      - "traefik.http.services.prim-mcp.loadbalancer.server.port=3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  infra-network:
+    external: true
